@@ -3,7 +3,7 @@ library(ggplot2)
 ui<-shinyUI(fluidPage(
     
     # Aplication title 
-    headerPanel(img(src = "arbol1.png", height = 100, width = 1500)), 
+    headerPanel(img(src = "arbol1.png", height = 100, width = 1500)), # image made with Tess (http://www.peda.com/tess/)
     titlePanel("Benefit/Cost Analysis of Urban Trees"),
     
     sidebarPanel(
@@ -18,12 +18,14 @@ ui<-shinyUI(fluidPage(
           they might change, sometimes significantly, depending on a particular situation so 
           these values should not be used except for the demonstration purposes."),
         p("Please select number of trees and the average diameter at breast height of the trees"),
-        
+    
+    # Inputs
+    
         numericInput(inputId = "NumTree", label = "Number of trees", value = 0, min = 0, max = 100, step = 5),
         numericInput(inputId = "DBH", label = "Diameter at Breast Height", value = 0, min = 0, max = 25, step = 5)
     ), 
     
-    
+    # Outputs
     mainPanel(
         h3("Cost/Benefit Results"),
         h4("The number of trees you entered"),
@@ -48,10 +50,12 @@ ui<-shinyUI(fluidPage(
     
 ))
 
-# Reduction functions
+# Helper functions for estimation of the value in dollars of different ecosystem services
 
 RunoffReduction <- function(NumTree, DBH) NumTree*((0.0303*DBH^2) + (0.182*DBH) + 2.29)
+
 PollutionReduction <- function(NumTree, DBH) NumTree*((0.16*DBH^2) + (0.334*DBH) + 2.57)
+
 CarbonSequestration <- function(NumTree, DBH) NumTree*((0.27*DBH^2) + (0.095*DBH) + 6.85)
 
 EnergySavings<-function(NumTree, DBH){
@@ -66,6 +70,7 @@ EnergySavings<-function(NumTree, DBH){
     return(EnSavings)
 }
 
+# Estimation of cost of mantainance given de DBH which is a measure of maturity of the tree
 MantCost<-function(NumTree, DBH){
     if(DBH<=8){
         Cost = 100
@@ -77,6 +82,8 @@ MantCost<-function(NumTree, DBH){
     Costs=NumTree*Cost
     return(Costs)
 }
+
+# Server operations
 
 server<-shinyServer(function(input, output){
     
@@ -93,6 +100,9 @@ server<-shinyServer(function(input, output){
                                                 CarbonSequestration(input$NumTree, input$DBH)+
                                                 EnergySavings(input$NumTree, input$DBH))
     })
+    
+    # Plot of the values of ecosystem services (ES) and the cost of mantainance
+    
     output$barras <- renderPlot({ 
         
         RR<- RunoffReduction(input$NumTree, input$DBH)
@@ -104,6 +114,7 @@ server<-shinyServer(function(input, output){
         
         ggplot(datos, aes(x = ES, y = Values, fill = ES)) + geom_bar(stat = "identity")})
     
+    # Plot that compares the cost versus the sum of the values of ES 
     output$barras2 <- renderPlot({
         
         RR<- RunoffReduction(input$NumTree, input$DBH)
